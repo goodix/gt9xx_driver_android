@@ -1,0 +1,63 @@
+//	Goodix GT9xx series Driver - Android Platform	//
+
+Revision Information
+--------------------
+
+V2.4	2014/11/28, caiyulong@goodix.com
+			 - device tree support, gpio and cfg can be parsed form either dts
+			 	 or the header file.
+			 - new wake-up method, support frame buffer(CONFIG_FB),
+			 	 i2c pm(CONFIG_PM), and earlysuspend.
+			 - modify input_dev->phys.
+			 - revise config group num to 0-5.
+			 - move esd switch to the front of firmware update in goodix_ts_probe.
+			 - check update status at the beginning of gtp_esd_check_func.
+			 - check update status at the beginning of goodix_ts_resume.
+			 - new method for checking config version when init panel, delete 
+			 	 ts->fixed_cfg.
+			 - add put_path in gup_check_fs_mounted.
+			 - correct calculating of firmware checksum in gup_check_update_file_fl.
+			 
+V2.2  2014/01/14, meta@goodix.com
+       - gt9xx_config for debug
+       - gesture wakeup
+       - pen separate input device, active-pen button support
+       - coordinates & keys optimization
+			 - multi-system supported
+			 - flashless update no pid vid compare   
+			                
+V2.0  2013/08/06, meta@goodix.com  
+       - compatible with GT9XXF
+       - send config after resume
+  
+V1.8  2013/06/08, meta@goodix.com
+       - pen/stylus identification 
+       - read double check & fixed config support
+       - new esd & slide wakeup optimization
+                
+V1.6  2013/03/11, meta@goodix.com
+       - new heartbeat/esd_protect mechanism(add external watchdog)
+       - doze mode, sliding wakeup 
+       - 3 more cfg_group(GT9 Sensor_ID: 0~5) 
+       - config length verification
+       - names & comments
+			 - replace guitar_client with i2c_connect_client;
+			 - support firmware header array update.      
+			            
+V1.4  2012/12/12, andrew@goodix.com    
+			 - add config auto update function;
+			 - modify enter_update_mode;
+			 - add update file cal checksum.
+          
+V1.2	2012/10/1, andrew@goodix.com
+       - modify gtp_reset_guitar,slot report,tracking_id & 0x0F.
+       - add force update,GT9110P pid map                   
+V1.0	2012/08/31, andrew@goodix.com   
+       - first release.  
+
+
+
+
+
+
+

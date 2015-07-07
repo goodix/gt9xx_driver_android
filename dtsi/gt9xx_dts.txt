@@ -1,0 +1,85 @@
+Goodix GT9xx series touch controller
+
+Required properties:
+
+ - compatible		: Should be "goodix,gt9xx", compatible with the of_match_table defined 
+                  in driver.
+ - reg			    : I2C slave address of the device.
+ - interrupt-parent	: Parent of interrupt.
+ - interrupts		: Configuration of touch panel controller interrupt
+				GPIO.
+ - irq-gpio	: Interrupt gpio which is to provide interrupts to
+				host, same as "interrupts" node.
+ - rst-gpio : Reset gpio to control the reset of chip.
+
+Optional properties:
+
+ - vdd_ana-supply	: Power supply needed to power up the device, when use
+				external regulator, do not add this property.
+ - vcc_i2c-supply	: Power source required to power up i2c bus.
+				GT9xx series can provide 1.8V from internal
+				LDO, add this properties base on hardware
+				design.
+ - goodix,cfg-group0	: Touch screen controller config data group 0. Ask vendor
+				to provide that.
+				Driver supports maximum six config groups. driver will select config group depending
+				on sensor id.
+
+ - goodix,cfg-group1	: Touch screen controller config data group 1. Ask vendor
+				to provide that.
+ - goodix,cfg-group2	: Touch screen controller config data group 2. Ask vendor
+				to provide that.
+ - goodix,cfg-group3	: Touch screen controller config data group 3. Ask vendor
+				to provide that.
+ - goodix,cfg-group4	: Touch screen controller config data group 4. Ask vendor
+				to provide that.
+ - goodix,cfg-group5	: Touch screen controller config data group 5. Ask vendor
+				to provide that.
+Example:
+	i2c@f9927000 { /*Goodix BLSP1 QUP5 */
+		goodix_ts@5d {
+			compatible = "goodix,gt9xx";
+			reg = <0x5d>;
+			interrupt-parent = <&msmgpio>;
+			interrupts = <17 0x2008>;
+			vdd_ana-supply = <&pm8226_l19>;
+			vcc_i2c-supply = <&pm8226_lvs1>;
+			goodix,rst-gpio = <&msmgpio 16 0x00>;
+			goodix,irq-gpio = <&msmgpio 17 0x00>;
+			goodix,cfg-group0 = [
+				42 D0 02 00 05 05 75 01 01 0F 24 
+				0F 64 3C 03 05 00 00 00 02 00 00 
+				00 16 19 1C 14 8C 0E 0E 24 00 31 
+				0D 00 00 00 83 33 1D 00 41 00 00 
+				00 00 00 08 0A 00 2B 1C 3C 94 D5 
+				03 08 00 00 04 93 1E 00 82 23 00 
+				74 29 00 69 2F 00 5F 37 00 5F 20 
+				40 60 00 F0 40 30 55 50 27 00 00 
+				00 00 00 00 00 00 00 00 00 00 00 
+				00 00 00 00 00 00 00 14 19 00 00 
+				50 50 02 04 06 08 0A 0C 0E 10 12 
+				14 16 18 1A 1C 00 00 00 00 00 00 
+				00 00 00 00 00 00 00 00 00 00 1D 
+				1E 1F 20 21 22 24 26 28 29 2A 1C 
+				18 16 14 13 12 10 0F 0C 0A 08 06 
+				04 02 00 00 00 00 00 00 00 00 00 
+				00 00 00 00 00 00 00 00 9C 01];
+			goodix,cfg-group2 = [
+				48 D0 02 00 05 05 75 01 01 0F 24 
+				0F 64 3C 03 05 00 00 00 02 00 00 
+				00 16 19 1C 14 8C 0E 0E 24 00 31 
+				0D 00 00 00 83 33 1D 00 41 00 00 
+				3C 0A 14 08 0A 00 2B 1C 3C 94 D5 
+				03 08 00 00 04 93 1E 00 82 23 00 
+				74 29 00 69 2F 00 5F 37 00 5F 20 
+				40 60 00 F0 40 30 55 50 27 00 00 
+				00 00 00 00 00 00 00 00 00 00 00 
+				00 00 00 00 00 00 00 14 19 00 00 
+				50 50 02 04 06 08 0A 0C 0E 10 12 
+				14 16 18 1A 1C 00 00 00 00 00 00 
+				00 00 00 00 00 00 00 00 00 00 1D 
+				1E 1F 20 21 22 24 26 28 29 2A 1C 
+				18 16 14 13 12 10 0F 0C 0A 08 06 
+				04 02 00 00 00 00 00 00 00 00 00 
+				00 00 00 00 00 00 00 00 3C 01];
+};
