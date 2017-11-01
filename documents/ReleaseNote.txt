@@ -2,22 +2,28 @@
 
 Revision Information
 --------------------
+V2.8    2017/11/01, wangyafei@gooix.com
+	- Reconstruction the driver.
+	- Remove GT9F series controller support
+	- Remove file firmware update
+	- Add request firmware update method
+	- Do coding style check
 
 V2.4	2014/11/28, caiyulong@goodix.com
-			 - device tree support, gpio and cfg can be parsed form either dts
-			 	 or the header file.
-			 - new wake-up method, support frame buffer(CONFIG_FB),
-			 	 i2c pm(CONFIG_PM), and earlysuspend.
-			 - modify input_dev->phys.
-			 - revise config group num to 0-5.
-			 - move esd switch to the front of firmware update in goodix_ts_probe.
-			 - check update status at the beginning of gtp_esd_check_func.
-			 - check update status at the beginning of goodix_ts_resume.
-			 - new method for checking config version when init panel, delete 
-			 	 ts->fixed_cfg.
-			 - add put_path in gup_check_fs_mounted.
-			 - correct calculating of firmware checksum in gup_check_update_file_fl.
-			 
+	 - device tree support, gpio and cfg can be parsed form either dts
+		 or the header file.
+	 - new wake-up method, support frame buffer(CONFIG_FB),
+		 i2c pm(CONFIG_PM), and earlysuspend.
+	 - modify input_dev->phys.
+	 - revise config group num to 0-5.
+	 - move esd switch to the front of firmware update in goodix_ts_probe.
+	 - check update status at the beginning of gtp_esd_check_func.
+	 - check update status at the beginning of goodix_ts_resume.
+	 - new method for checking config version when init panel, delete 
+		 ts->fixed_cfg.
+	 - add put_path in gup_check_fs_mounted.
+	 - correct calculating of firmware checksum in gup_check_update_file_fl.
+		 
 V2.2  2014/01/14, meta@goodix.com
        - gt9xx_config for debug
        - gesture wakeup
