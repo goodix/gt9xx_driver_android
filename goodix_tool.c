@@ -169,7 +169,7 @@ s32 init_wr_node(struct i2c_client *client)
 	memset(&cmd_head, 0, sizeof(cmd_head));
 	cmd_head.data = NULL;
 
-	i = 3;
+	i = 6;
 	while ((!cmd_head.data) && i) {
 		cmd_head.data = kzalloc(i * DATA_LENGTH_UINT, GFP_KERNEL);
 		if (NULL != cmd_head.data)
