@@ -14,8 +14,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
- * Version: 2.8.0.1
- * Release Date: 2017/10/26
+ * Version: 2.8.0.2
+ * Release Date: 2017/12/14
  */
 
 #ifndef _GOODIX_GT9XX_H_
@@ -96,7 +96,6 @@ struct goodix_ts_platform_data {
 	u32 auto_update_cfg;
 	u32 esd_protect;
 	u32 type_a_report;
-	u32 create_wr_node;
 	u32 power_off_sleep;
 	u32 resume_in_workqueue;
 	u32 pen_suppress_finger;
@@ -110,7 +109,7 @@ struct goodix_ts_esd {
 };
 
 enum {
-	REPORT_THREAD_ENABLED = 0,
+	WORK_THREAD_ENABLED = 0,
 	HRTIMER_USED,
 	FW_ERROR,
 
@@ -162,9 +161,6 @@ struct goodix_ts_data {
 	bool force_update;
 	bool init_done;
 };
-
-extern u16 show_len;
-extern u16 total_len;
 
 /************************* PART2:TODO define *******************************/
 /* STEP_1(REQUIRED): Define Configuration Information Group(s)
@@ -273,7 +269,7 @@ config your key info here */
 	KEY_F1, KEY_F2, KEY_F3}
 
 /**************************PART3:OTHER define*******************************/
-#define GTP_DRIVER_VERSION	"V2.8.0.1<2017/10/26>"
+#define GTP_DRIVER_VERSION	"V2.8.0.2<2017/12/14>"
 #define GTP_I2C_NAME		"goodix-ts"
 #define GT91XX_CONFIG_PROC_FILE	"gt9xx_config"
 #define GTP_POLL_TIME		10
@@ -286,15 +282,14 @@ config your key info here */
 #define SUCCESS			1
 
 /* Registers define */
+#define GTP_REG_COMMAND		0x8040
+#define GTP_REG_ESD_CHECK	0x8041
+#define GTP_REG_COMMAND_CHECK	0x8046
+#define GTP_REG_CONFIG_DATA	0x8047
 #define GTP_REG_VERSION		0x8140
-#define GTP_REG_ESD_CHECK	0x8141
 #define GTP_REG_SENSOR_ID	0x814A
 #define GTP_REG_DOZE_BUF	0x814B
 #define GTP_READ_COOR_ADDR	0x814E
-#define GTP_REG_SLEEP		0x8040
-#define GTP_REG_COMMAND		0x8040
-#define GTP_REG_COMMAND_CHECK	0x8046
-#define GTP_REG_CONFIG_DATA	0x8047
 
 /* Sleep time define */
 #define GTP_1_DLY_MS		1
@@ -358,12 +353,20 @@ extern void gtp_int_sync(struct goodix_ts_data *ts, s32 ms);
 extern void gtp_esd_on(struct goodix_ts_data *ts);
 extern void gtp_esd_off(struct goodix_ts_data *ts);
 extern void gtp_work_control_enable(struct goodix_ts_data *ts, bool enable);
-extern u8 gup_init_update_proc(struct goodix_ts_data *);
-extern s32 gtp_send_cfg(struct i2c_client *client);
-extern s32 gup_update_proc(void *dir);
 
+#ifdef CONFIG_TOUCHSCREEN_GT9XX_UPDATE
+extern u16 show_len;
+extern u16 total_len;
+extern u8 gup_init_update_proc(struct goodix_ts_data *);
+extern s32 gup_update_proc(void *dir);
+extern s32 gup_enter_update_mode(struct i2c_client *client);
+extern void gup_leave_update_mode(struct i2c_client *client);
+#endif
+
+#ifdef CONFIG_TOUCHSCREEN_GT9XX_TOOL
 extern s32 init_wr_node(struct i2c_client *);
 extern void uninit_wr_node(void);
+#endif
 
 /*********** For gt9xx_update Start *********/
 extern struct i2c_client *i2c_connect_client;
@@ -375,12 +378,7 @@ extern s32 gtp_i2c_read_dbl_check(struct i2c_client *, u16, u8 *, int);
 extern int gtp_i2c_read(struct i2c_client *, u8 *, int);
 extern int gtp_i2c_write(struct i2c_client *, u8 *, int);
 extern s32 gtp_fw_startup(struct i2c_client *client);
+extern int gtp_ascii_to_array(const u8 *src_buf, int src_len, u8 *dst_buf);
 /*********** For gt9xx_update End *********/
-
-/*********** For goodix_tool Start *********/
-extern s32 gup_enter_update_mode(struct i2c_client *client);
-extern s32 gup_update_proc(void *dir);
-extern void gup_leave_update_mode(struct i2c_client *client);
-/*********** For goodix_tool End *********/
 
 #endif /* _GOODIX_GT9XX_H_ */
