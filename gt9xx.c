@@ -14,11 +14,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
- * Version: 2.8.0.1
- * Release Date: 2017/11/24
  */
 
 #include <linux/irq.h>
+#include <linux/version.h>
 #include <linux/platform_device.h>
 #include <linux/pinctrl/consumer.h>
 #include <linux/input/mt.h>
@@ -1039,27 +1038,12 @@ static ssize_t gtp_config_read_proc(struct file *file, char __user *page,
 	return data_len;
 }
 
-static u8 ascii2hex(u8 a)
-{
-	s8 value = 0;
-
-	if (a >= '0' && a <= '9')
-		value = a - '0';
-	else if (a >= 'A' && a <= 'F')
-		value = a - 'A' + 0x0A;
-	else if (a >= 'a' && a <= 'f')
-		value = a - 'a' + 0x0A;
-	else
-		value = 0xff;
-
-	return value;
-}
-
 int gtp_ascii_to_array(const u8 *src_buf, int src_len, u8 *dst_buf)
 {
 	int i, ret;
 	int cfg_len = 0;
-	u8 high, low;
+	long val;
+	char temp_buf[5];
 
 	for (i = 0; i < src_len;) {
 		if (src_buf[i] == ' ' || src_buf[i] == '\r' ||
@@ -1068,18 +1052,14 @@ int gtp_ascii_to_array(const u8 *src_buf, int src_len, u8 *dst_buf)
 			continue;
 		}
 
-		if ((src_buf[i] == '0') && ((src_buf[i + 1] == 'x') ||
-					    (src_buf[i + 1] == 'X'))) {
-			high = ascii2hex(src_buf[i + 2]);
-			low = ascii2hex(src_buf[i + 3]);
-
-			if ((high == 0xFF) || (low == 0xFF)) {
-				ret = -1;
-				goto convert_failed;
-			}
-
+		temp_buf[0] = src_buf[i];
+		temp_buf[1] = src_buf[i + 1];
+		temp_buf[2] = src_buf[i + 2];
+		temp_buf[3] = src_buf[i + 3];
+		temp_buf[4] = '\0';
+		if (!kstrtol(temp_buf, 16, &val)) {
 			if (cfg_len < GTP_CONFIG_MAX_LENGTH) {
-				dst_buf[cfg_len++] = (high << 4) + low;
+				dst_buf[cfg_len++] = val & 0xFF;
 				i += 5;
 			} else {
 				ret = -2;
@@ -1103,7 +1083,7 @@ static ssize_t gtp_config_write_proc(struct file *filp,
 	u8 *temp_buf;
 	u8 *file_config;
 	int file_cfg_len;
-	s32 ret = 0, i;
+	s32 ret = 0;
 	struct goodix_ts_data *ts = i2c_get_clientdata(i2c_connect_client);
 
 	dev_dbg(&ts->client->dev, "write count %zu\n", count);
@@ -1145,30 +1125,32 @@ static ssize_t gtp_config_write_proc(struct file *filp,
 
 	GTP_DEBUG_ARRAY(file_config + GTP_ADDR_LENGTH, file_cfg_len);
 
-	i = 0;
-	while (i++ < 5) {
-		ret = gtp_i2c_write(ts->client, file_config, file_cfg_len + 2);
-		if (ret > 0) {
-			dev_info(&ts->client->dev, "Send config SUCCESS.");
-			break;
-		}
+	ret = gtp_i2c_write(ts->client, file_config, file_cfg_len + 2);
+	if (ret > 0) {
+		dev_info(&ts->client->dev, "Send config SUCCESS.");
+		ret = count;
+	} else {
 		dev_err(&ts->client->dev, "Send config i2c error.");
 		ret = -EFAULT;
-		goto send_cfg_err;
 	}
 
-	ret = count;
 send_cfg_err:
 	kfree(temp_buf);
 	kfree(file_config);
 	return ret;
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0))
+static const struct proc_ops config_proc_ops = {
+	.proc_read = gtp_config_read_proc,
+	.proc_write = gtp_config_write_proc,
+};
+#else
 static const struct file_operations config_proc_ops = {
-	.owner = THIS_MODULE,
 	.read = gtp_config_read_proc,
 	.write = gtp_config_write_proc,
 };
+#endif
 
 static ssize_t gtp_workmode_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
@@ -1190,7 +1172,6 @@ static ssize_t gtp_workmode_show(struct device *dev,
 }
 static DEVICE_ATTR(workmode, 0444, gtp_workmode_show, NULL);
 
-#ifdef CONFIG_TOUCHSCREEN_GT9XX_UPDATE
 #define FW_NAME_MAX_LEN	80
 static ssize_t gtp_dofwupdate_store(struct device *dev,
 				    struct device_attribute *attr,
@@ -1221,7 +1202,6 @@ exit:
 	return retval;
 }
 static DEVICE_ATTR(dofwupdate, 0664, NULL, gtp_dofwupdate_store);
-#endif
 
 static ssize_t gtp_productinfo_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
@@ -1295,11 +1275,7 @@ static DEVICE_ATTR(reset, 0220, NULL, gtp_reset_store);
 static struct attribute *gtp_attrs[] = {
 	&dev_attr_workmode.attr,
 	&dev_attr_productinfo.attr,
-
-#ifdef CONFIG_TOUCHSCREEN_GT9XX_UPDATE
 	&dev_attr_dofwupdate.attr,
-#endif
-
 	&dev_attr_drv_irq.attr,
 	&dev_attr_reset.attr,
 	NULL
@@ -1448,7 +1424,7 @@ exit_pinctrl_init:
 	pinctrl->int_out_high = NULL;
 	pinctrl->int_out_low = NULL;
 	pinctrl->int_input = NULL;
-	return 0;
+	return -EINVAL;
 }
 
 static void gtp_pinctrl_deinit(struct goodix_ts_data *ts)
@@ -2026,14 +2002,6 @@ static int gtp_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	if (ret < 0)
 		dev_info(&client->dev, "Panel un-initialize\n");
 
-#ifdef CONFIG_TOUCHSCREEN_GT9XX_UPDATE
-	if (ts->pdata->auto_update) {
-		ret = gup_init_update_proc(ts);
-		if (ret < 0)
-			dev_err(&client->dev, "Failed create update thread\n");
-	}
-#endif
-
 	ret = gtp_request_input_dev(ts);
 	if (ret < 0) {
 		dev_err(&client->dev, "Failed request input device\n");
@@ -2063,15 +2031,19 @@ static int gtp_probe(struct i2c_client *client, const struct i2c_device_id *id)
 		goto exit_powermanager;
 	}
 
-#ifdef CONFIG_TOUCHSCREEN_GT9XX_TOOL
-	init_wr_node(client);/*TODO judge return value */
-#endif
-
 	gtp_esd_init(ts);
 	gtp_esd_on(ts);
 	/* probe init finished */
 	ts->init_done = true;
 	gtp_work_control_enable(ts, true);
+
+	init_wr_node(client);/*TODO judge return value */
+
+	if (ts->pdata->auto_update) {
+		ret = gup_init_update_proc(ts);
+		if (ret < 0)
+			dev_err(&client->dev, "Failed create update thread\n");
+	}
 
 	return 0;
 
@@ -2108,9 +2080,7 @@ static int gtp_drv_remove(struct i2c_client *client)
 
 	sysfs_remove_group(&client->dev.kobj, &gtp_attr_group);
 
-#ifdef CONFIG_TOUCHSCREEN_GT9XX_TOOL
 	uninit_wr_node();
-#endif
 
 	if (ts->pdata->esd_protect)
 		gtp_esd_off(ts);

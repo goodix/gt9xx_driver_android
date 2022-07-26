@@ -269,7 +269,7 @@ config your key info here */
 	KEY_F1, KEY_F2, KEY_F3}
 
 /**************************PART3:OTHER define*******************************/
-#define GTP_DRIVER_VERSION	"V2.8.0.2<2017/12/14>"
+#define GTP_DRIVER_VERSION	"V2.8.1<2022/07/25>"
 #define GTP_I2C_NAME		"goodix-ts"
 #define GT91XX_CONFIG_PROC_FILE	"gt9xx_config"
 #define GTP_POLL_TIME		10
@@ -354,19 +354,15 @@ extern void gtp_esd_on(struct goodix_ts_data *ts);
 extern void gtp_esd_off(struct goodix_ts_data *ts);
 extern void gtp_work_control_enable(struct goodix_ts_data *ts, bool enable);
 
-#ifdef CONFIG_TOUCHSCREEN_GT9XX_UPDATE
 extern u16 show_len;
 extern u16 total_len;
 extern u8 gup_init_update_proc(struct goodix_ts_data *);
 extern s32 gup_update_proc(void *dir);
 extern s32 gup_enter_update_mode(struct i2c_client *client);
 extern void gup_leave_update_mode(struct i2c_client *client);
-#endif
 
-#ifdef CONFIG_TOUCHSCREEN_GT9XX_TOOL
 extern s32 init_wr_node(struct i2c_client *);
 extern void uninit_wr_node(void);
-#endif
 
 /*********** For gt9xx_update Start *********/
 extern struct i2c_client *i2c_connect_client;

@@ -14,11 +14,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
- * Version: 2.8.0.1
- * Release Date: 2017/11/24
  */
 
 #include "gt9xx.h"
+#include <linux/version.h>
 
 #define DATA_LENGTH_UINT	512
 #define CMD_HEAD_LENGTH		(sizeof(struct st_cmd_head) - sizeof(u8 *))
@@ -48,11 +47,19 @@ static struct proc_dir_entry *goodix_proc_entry;
 
 static ssize_t goodix_tool_read(struct file *, char __user *, size_t, loff_t *);
 static ssize_t goodix_tool_write(struct file *, const char __user *, size_t, loff_t *);
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0))
+static const struct proc_ops gtp_proc_ops = {
+	.proc_read = goodix_tool_read,
+	.proc_write = goodix_tool_write,
+};
+#else
 static const struct file_operations gtp_proc_ops = {
-	.owner = THIS_MODULE,
 	.read = goodix_tool_read,
 	.write = goodix_tool_write,
 };
+#endif
+
 
 /* static s32 goodix_tool_write(struct file *filp,
  * const char __user *buff, unsigned long len, void *data);
@@ -169,7 +176,7 @@ s32 init_wr_node(struct i2c_client *client)
 	memset(&cmd_head, 0, sizeof(cmd_head));
 	cmd_head.data = NULL;
 
-	i = 3;
+	i = 6;
 	while ((!cmd_head.data) && i) {
 		cmd_head.data = kzalloc(i * DATA_LENGTH_UINT, GFP_KERNEL);
 		if (cmd_head.data)
@@ -191,7 +198,7 @@ s32 init_wr_node(struct i2c_client *client)
 	register_i2c_func();
 
 	tool_set_proc_name(procname);
-	goodix_proc_entry = proc_create(procname, 0664, NULL, &gtp_proc_ops);
+	goodix_proc_entry = proc_create(procname, 0666, NULL, &gtp_proc_ops);
 	if (!goodix_proc_entry) {
 		dev_err(&gt_client->dev, "Couldn't create proc entry!");
 		return FAIL;
@@ -312,11 +319,6 @@ ssize_t goodix_tool_write(struct file *filp, const char __user *buff,
 		(s32)cmd_head.circle,
 		(s32)cmd_head.times, (s32)cmd_head.retry,
 		(s32)cmd_head.delay);
-	dev_dbg(&gt_client->dev,
-	"[Data]data len: %d,addr len: %d, addr: %02X%02X,buffer len:%d, data[0]: %02X",
-	(s32)cmd_head.data_len,
-	(s32)cmd_head.addr_len, cmd_head.addr[0],
-	cmd_head.addr[1], (s32)len, buff[CMD_HEAD_LENGTH]);
 
 	if (1 == cmd_head.wr) {
 		if (cmd_head.data_len > DATA_LENGTH) {
@@ -336,8 +338,6 @@ ssize_t goodix_tool_write(struct file *filp, const char __user *buff,
 
 		GTP_DEBUG_ARRAY(cmd_head.data, cmd_head.data_len +
 				cmd_head.addr_len);
-		GTP_DEBUG_ARRAY((u8 *)&buff[CMD_HEAD_LENGTH],
-				cmd_head.data_len);
 
 		if (1 == cmd_head.flag) {
 			if (FAIL == comfirm()) {
@@ -411,7 +411,7 @@ ssize_t goodix_tool_write(struct file *filp, const char __user *buff,
 		/* add new command: reset guitar */
 		gtp_reset_guitar(gt_client, 20);
 	}
-#ifdef CONFIG_TOUCHSCREEN_GT9XX_UPDATE
+
 	else if (11 == cmd_head.wr) {/*Enter update mode!*/
 		if (FAIL == gup_enter_update_mode(gt_client))
 			return -EPERM;
@@ -437,7 +437,7 @@ ssize_t goodix_tool_write(struct file *filp, const char __user *buff,
 		if (FAIL == gup_update_proc((void *)cmd_head.data))
 			return -EPERM;
 	}
-#endif
+
 
 	return len;
 }
@@ -510,7 +510,7 @@ ssize_t goodix_tool_read(struct file *file, char __user *page,
 					      IC_TYPE, sizeof(IC_TYPE));
 		return ret;
 	}
-#ifdef CONFIG_TOUCHSCREEN_GT9XX_UPDATE
+
 	else if (4 == cmd_head.wr) {
 		u8 progress_buf[4];
 
@@ -523,7 +523,7 @@ ssize_t goodix_tool_read(struct file *file, char __user *page,
 					      progress_buf, 4);
 		return ret;
 	}
-#endif
+
 	else if (6 == cmd_head.wr) {
 		/*Read error code!*/
 	} else if (8 == cmd_head.wr) {	/*Read driver version*/

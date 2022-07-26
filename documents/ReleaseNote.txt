@@ -2,6 +2,10 @@
 
 Revision Information
 --------------------
+V2.8.1	2022/07/25, xulinkun@goodix.com
+	- Add support for 5.10 kernel
+	- Add support for building .ko
+
 V2.8    2017/11/01, wangyafei@gooix.com
 	- Reconstruction the driver.
 	- Remove GT9F series controller support

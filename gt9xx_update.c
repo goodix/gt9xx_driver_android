@@ -14,8 +14,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
- * Version: 2.8.0.1
- * Release Date: 2017/11/24
  */
 
 #include <linux/kthread.h>
@@ -666,13 +664,13 @@ static u8 gup_burn_proc(struct i2c_client *client, u8 *burn_buf,
 static u8 gup_load_section_file(u8 *buf, u32 offset, u16 length, u8 set_or_end)
 {
 	if (!update_msg.fw_data ||
-	    update_msg.fw_total_len < FW_HEAD_LENGTH + offset + length) {
-		pr_err("<<-GTP->> cannot load section data. fw_len=%d read end=%d\n",
-		update_msg.fw_total_len,
-		FW_HEAD_LENGTH + offset + length);
+	    update_msg.fw_total_len < offset + length) {
+		dev_err(&i2c_connect_client->dev,
+			"cannot load section data. fw_len=%d read end=%d\n",
+			update_msg.fw_total_len,
+			FW_HEAD_LENGTH + offset + length);
 		return FAIL;
 	}
-
 
 	if (SEEK_SET == set_or_end) {
 		memcpy(buf, &update_msg.fw_data[FW_HEAD_LENGTH + offset],
@@ -869,8 +867,8 @@ static u8 gup_burn_dsp_isp(struct i2c_client *client)
 
 	/* step2:load dsp isp file data */
 	dev_dbg(&client->dev, "[burn_dsp_isp]step2:load dsp isp file data");
-	ret = gup_load_section_file(fw_dsp_isp,
-	FW_DSP_ISP_LENGTH, FW_DSP_ISP_LENGTH, SEEK_END);
+	ret = gup_load_section_file(fw_dsp_isp, FW_DSP_ISP_LENGTH,
+				    FW_DSP_ISP_LENGTH, SEEK_END);
 	if (FAIL == ret) {
 		dev_err(&client->dev,
 			"[burn_dsp_isp]load firmware dsp_isp fail.");
@@ -1019,8 +1017,8 @@ static u8 gup_burn_fw_ss51(struct i2c_client *client)
 	/* step5:load ss51 firmware section 2 file data */
 	dev_dbg(&client->dev,
 		"[burn_fw_ss51]step5:load ss51 firmware section 2 file data");
-	ret = gup_load_section_file(fw_ss51,
-	FW_SECTION_LENGTH, FW_SECTION_LENGTH, SEEK_SET);
+	ret = gup_load_section_file(fw_ss51, FW_SECTION_LENGTH,
+				    FW_SECTION_LENGTH, SEEK_SET);
 	if (FAIL == ret) {
 		dev_err(&client->dev,
 			"[burn_fw_ss51]load ss51 firmware section 2 fail.");
@@ -1040,8 +1038,8 @@ static u8 gup_burn_fw_ss51(struct i2c_client *client)
 	/* step7:load ss51 firmware section 3 file data */
 	dev_dbg(&client->dev,
 		"[burn_fw_ss51]step7:load ss51 firmware section 3 file data");
-	ret = gup_load_section_file(fw_ss51,
-	2 * FW_SECTION_LENGTH, FW_SECTION_LENGTH, SEEK_SET);
+	ret = gup_load_section_file(fw_ss51, 2 * FW_SECTION_LENGTH,
+				    FW_SECTION_LENGTH, SEEK_SET);
 	if (FAIL == ret) {
 		dev_err(&client->dev,
 			"[burn_fw_ss51]load ss51 firmware section 3 fail.");
@@ -1061,8 +1059,8 @@ static u8 gup_burn_fw_ss51(struct i2c_client *client)
 	/* step9:load ss51 firmware section 4 file data */
 	dev_dbg(&client->dev,
 		"[burn_fw_ss51]step9:load ss51 firmware section 4 file data");
-	ret = gup_load_section_file(fw_ss51,
-	3 * FW_SECTION_LENGTH, FW_SECTION_LENGTH, SEEK_SET);
+	ret = gup_load_section_file(fw_ss51, 3 * FW_SECTION_LENGTH,
+				    FW_SECTION_LENGTH, SEEK_SET);
 	if (FAIL == ret) {
 		dev_err(&client->dev,
 			"[burn_fw_ss51]load ss51 firmware section 4 fail.");
@@ -1117,8 +1115,8 @@ static u8 gup_burn_fw_dsp(struct i2c_client *client)
 
 	/* step2:load firmware dsp */
 	dev_dbg(&client->dev, "[burn_fw_dsp]step2:load firmware dsp");
-	ret = gup_load_section_file(fw_dsp,
-	4 * FW_SECTION_LENGTH, FW_DSP_LENGTH, SEEK_SET);
+	ret = gup_load_section_file(fw_dsp, 4 * FW_SECTION_LENGTH,
+				    FW_DSP_LENGTH, SEEK_SET);
 	if (FAIL == ret) {
 		dev_err(&client->dev, "[burn_fw_dsp]load firmware dsp fail.");
 		goto exit_burn_fw_dsp;
@@ -1243,7 +1241,8 @@ static u8 gup_burn_fw_boot(struct i2c_client *client)
 	/* step2:load firmware bootloader */
 	dev_dbg(&client->dev, "[burn_fw_boot]step2:load firmware bootloader");
 	ret = gup_load_section_file(fw_boot,
-	(4 * FW_SECTION_LENGTH + FW_DSP_LENGTH), FW_BOOT_LENGTH, SEEK_SET);
+				    4 * FW_SECTION_LENGTH + FW_DSP_LENGTH,
+				    FW_BOOT_LENGTH, SEEK_SET);
 	if (FAIL == ret) {
 		dev_err(&client->dev,
 			"[burn_fw_boot]load firmware bootcode fail.");
@@ -1381,9 +1380,8 @@ static u8 gup_burn_fw_boot_isp(struct i2c_client *client)
 	 * (4*FW_SECTION_LENGTH+FW_DSP_LENGTH +
 	 * FW_BOOT_LENGTH+FW_DSP_ISP_LENGTH), FW_BOOT_ISP_LENGTH, SEEK_SET);
 	 */
-	ret = gup_load_section_file(fw_boot_isp,
-	(update_msg.fw_burned_len - FW_DSP_ISP_LENGTH),
-	FW_BOOT_ISP_LENGTH, SEEK_SET);
+	ret = gup_load_section_file(fw_boot_isp, (update_msg.fw_burned_len - FW_DSP_ISP_LENGTH),
+				    FW_BOOT_ISP_LENGTH, SEEK_SET);
 	if (FAIL == ret) {
 		dev_err(&client->dev,
 			"[burn_fw_boot_isp]load firmware boot_isp fail.");
@@ -1521,8 +1519,7 @@ static u8 gup_burn_fw_link(struct i2c_client *client)
 	dev_dbg(&client->dev,
 		"[burn_fw_link]step2:load firmware link section 1");
 	offset = update_msg.fw_burned_len - FW_DSP_ISP_LENGTH;
-	ret = gup_load_section_file(
-	fw_link, offset, FW_SECTION_LENGTH, SEEK_SET);
+	ret = gup_load_section_file(fw_link, offset, FW_SECTION_LENGTH, SEEK_SET);
 	if (FAIL == ret) {
 		dev_err(&client->dev,
 			"[burn_fw_link]load firmware link section 1 fail.");
@@ -1545,8 +1542,8 @@ static u8 gup_burn_fw_link(struct i2c_client *client)
 	dev_dbg(&client->dev,
 		"[burn_fw_link]step4:load link firmware section 2 file data");
 	offset += FW_SECTION_LENGTH;
-	ret = gup_load_section_file(
-	fw_link, offset, FW_GLINK_LENGTH - FW_SECTION_LENGTH, SEEK_SET);
+	ret = gup_load_section_file(fw_link, offset,
+				    FW_GLINK_LENGTH - FW_SECTION_LENGTH, SEEK_SET);
 
 	if (FAIL == ret) {
 		dev_err(&client->dev,
@@ -1709,8 +1706,8 @@ static u8 gup_burn_fw_gwake(struct i2c_client *client)
 	/* step2:load app_code firmware section 1 file data */
 	dev_dbg(&client->dev,
 		"[burn_fw_gwake]step2:load app_code firmware section 1 file data");
-	ret = gup_load_section_file(fw_gwake,
-	start_index, FW_SECTION_LENGTH, SEEK_SET);
+	ret = gup_load_section_file(fw_gwake, start_index,
+				    FW_SECTION_LENGTH, SEEK_SET);
 	if (FAIL == ret) {
 		dev_err(&client->dev,
 			"[burn_fw_gwake]load app_code firmware section 1 fail.");
@@ -1731,8 +1728,8 @@ static u8 gup_burn_fw_gwake(struct i2c_client *client)
 	/* step5:load app_code firmware section 2 file data */
 	dev_dbg(&client->dev,
 		"[burn_fw_gwake]step5:load app_code firmware section 2 file data");
-	ret = gup_load_section_file(
-	fw_gwake, start_index+FW_SECTION_LENGTH, FW_SECTION_LENGTH, SEEK_SET);
+	ret = gup_load_section_file(fw_gwake, start_index+FW_SECTION_LENGTH,
+				    FW_SECTION_LENGTH, SEEK_SET);
 	if (FAIL == ret) {
 		dev_err(&client->dev,
 			"[burn_fw_gwake]load app_code firmware section 2 fail.");
@@ -1753,9 +1750,9 @@ static u8 gup_burn_fw_gwake(struct i2c_client *client)
 	/* step7:load app_code firmware section 3 file data */
 	dev_dbg(&client->dev,
 		"[burn_fw_gwake]step7:load app_code firmware section 3 file data");
-	ret = gup_load_section_file(
-	fw_gwake, start_index + 2*FW_SECTION_LENGTH,
-	FW_SECTION_LENGTH, SEEK_SET);
+	ret = gup_load_section_file(fw_gwake,
+				    start_index + 2 * FW_SECTION_LENGTH,
+				    FW_SECTION_LENGTH, SEEK_SET);
 	if (FAIL == ret) {
 		dev_err(&client->dev,
 			"[burn_fw_gwake]load app_code firmware section 3 fail.");
@@ -1777,7 +1774,8 @@ static u8 gup_burn_fw_gwake(struct i2c_client *client)
 	dev_dbg(&client->dev,
 		"[burn_fw_gwake]step9:load app_code firmware section 4 file data");
 	ret = gup_load_section_file(fw_gwake,
-	start_index + 3*FW_SECTION_LENGTH, FW_SECTION_LENGTH, SEEK_SET);
+				    start_index + 3 * FW_SECTION_LENGTH,
+				    FW_SECTION_LENGTH, SEEK_SET);
 	if (FAIL == ret) {
 		dev_err(&client->dev,
 			"[burn_fw_gwake]load app_code firmware section 4 fail.");
