@@ -1943,6 +1943,9 @@ static int gtp_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	pdata->abs_size_y = GTP_DEFAULT_MAX_Y;
 	pdata->max_touch_width = GTP_DEFAULT_MAX_WIDTH;
 	pdata->max_touch_pressure = GTP_DEFAULT_MAX_PRESSURE;
+	pdata->int_sync = true;
+	pdata->irq_flags = GTP_DEFAULT_INT_TRIGGER;
+
 #endif
 
 	ts->client = client;
